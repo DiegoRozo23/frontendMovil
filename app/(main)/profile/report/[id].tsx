@@ -1,7 +1,10 @@
+import { createReportAction } from "@/core/actions/reports/create.report.action";
 import { FontAwesome } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
   Pressable,
   Text,
   TextInput,
@@ -12,14 +15,43 @@ import {
 export default function ReportUserModal() {
   const { id } = useLocalSearchParams();
   const [reportText, setReportText] = useState("");
+  const [reason, setReason] = useState("");
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleDismiss = () => {
     router.back();
   };
 
-  const handleSend = () => {
-    console.log(`Reportando usuario ${id}: ${reportText}`);
-    router.back();
+  const handleSend = async () => {
+    if (!reason.trim()) {
+      Alert.alert("Error", "Por favor escribe una razón para el reporte.");
+      return;
+    }
+
+    if (!description.trim()) {
+      Alert.alert("Error", "Por favor escribe una descripción.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await createReportAction({
+        reason,
+        description,
+      });
+      Alert.alert("Éxito", "Reporte enviado correctamente", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (error: any) {
+      console.error("Error creating report:", error);
+      Alert.alert(
+        "Error",
+        error.response?.data?.message || "No se pudo enviar el reporte."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -55,14 +87,26 @@ export default function ReportUserModal() {
 
         {/* Área de Texto (Input Grande) */}
         {/* CSS Ref: bg-[#ddddc7] que es el beige oscuro de tus inputs */}
+        {/* Input Razón */}
+        <TextInput
+          className="w-full h-[50px] bg-[#ddddc7] border border-secondary rounded-[15px] px-4 text-secondary font-manrope text-base mb-4"
+          placeholder="Razón del reporte"
+          placeholderTextColor="#f4f4e4"
+          value={reason}
+          onChangeText={setReason}
+          editable={!isSubmitting}
+        />
+
+        {/* Área de Texto (Input Grande) - Descripción */}
         <TextInput
           className="w-full h-[150px] bg-[#ddddc7] border border-secondary rounded-[15px] p-4 text-secondary font-manrope text-base mb-6"
-          placeholder="Texto Reporte"
+          placeholder="Descripción detallada"
           placeholderTextColor="#f4f4e4"
           multiline
           textAlignVertical="top"
-          value={reportText}
-          onChangeText={setReportText}
+          value={description}
+          onChangeText={setDescription}
+          editable={!isSubmitting}
         />
 
         {/* Botón Enviar (Dorado) */}
@@ -70,8 +114,13 @@ export default function ReportUserModal() {
           <TouchableOpacity
             onPress={handleSend}
             className="bg-[#dcac54] py-3 px-10 rounded-[10px]"
+            disabled={isSubmitting}
           >
-            <Text className="text-[#f4f4e4] font-extra text-sm">Enviar</Text>
+            {isSubmitting ? (
+              <ActivityIndicator color="#f4f4e4" size="small" />
+            ) : (
+              <Text className="text-[#f4f4e4] font-extra text-sm">Enviar</Text>
+            )}
           </TouchableOpacity>
         </View>
       </Pressable>
