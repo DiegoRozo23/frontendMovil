@@ -1,7 +1,15 @@
+import { getWhatsappAction } from "@/core/actions/communication/get.whatsapp.action";
 import { FontAwesome } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React from "react";
-import { ScrollView, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  Linking,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // Datos Mock
@@ -14,6 +22,23 @@ export default function PublicProfileScreen() {
   const { id } = useLocalSearchParams();
 
   const safeArea = useSafeAreaInsets();
+
+  const handleWhatsappPress = async () => {
+    try {
+      // ID hardcodeado temporalmente ya que no se puede obtener el ID del usuario porque falta implementacion 
+      const targetUserId = "d1418225-083a-44f0-98b6-98deef58d6b0";
+      const url = await getWhatsappAction(targetUserId);
+
+      if (url) {
+        await Linking.openURL(url);
+      } else {
+        Alert.alert("Aviso", "Este usuario no tiene un número de WhatsApp registrado.");
+      }
+    } catch (error) {
+      console.error("Error opening WhatsApp:", error);
+      Alert.alert("Error", "No se pudo abrir WhatsApp.");
+    }
+  };
 
   return (
     <View className="flex-1 bg-primary" style={{ paddingTop: safeArea.top }}>
@@ -52,7 +77,7 @@ export default function PublicProfileScreen() {
                 ))}
               </View>
               {/* Botón Reportar (Rojo) */}
-              // En app/(main)/profile/[id].tsx
+              {/* En app/(main)/profile/[id].tsx */}
               <TouchableOpacity
                 // CAMBIO: Ahora apunta a /profile/report/[id]
                 onPress={() => router.push(`./report/${id}`)}
@@ -79,6 +104,7 @@ export default function PublicProfileScreen() {
           <TouchableOpacity
             className="bg-[#25d366] py-2 px-6 rounded-full absolute right-6 top-2"
             activeOpacity={0.8}
+            onPress={handleWhatsappPress}
           >
             <Text className="text-[#f4f4e4] text-sm font-extra">Whatsapp</Text>
           </TouchableOpacity>
